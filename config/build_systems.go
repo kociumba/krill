@@ -27,6 +27,7 @@ const (
 	Odin
 	CSharp
 	FSharp
+	CustomLang
 )
 
 func (l Language) MarshalText() ([]byte, error) {
@@ -60,6 +61,7 @@ const (
 	GoCmd
 	OdinCmd
 	DotNet
+	CustomTool
 )
 
 func (t Tool) MarshalText() ([]byte, error) {
@@ -77,7 +79,7 @@ func (t *Tool) UnmarshalText(text []byte) error {
 }
 
 const (
-	Executable BinaryType = iota + 1
+	Executable BinaryType = iota
 	SharedLib
 	DynamicLib
 	StaticLib

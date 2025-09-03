@@ -24,11 +24,12 @@ func _() {
 	_ = x[GoCmd-13]
 	_ = x[OdinCmd-14]
 	_ = x[DotNet-15]
+	_ = x[CustomTool-16]
 }
 
-const _Tool_name = "CMakeNobRaw_GCCRaw_MSVCraw_CLANGGradleraw_KotlinCraw_JavaCMesonCargoraw_RustCMakeTaskfileGoCmdOdinCmdDotNet"
+const _Tool_name = "CMakeNobRaw_GCCRaw_MSVCraw_CLANGGradleraw_KotlinCraw_JavaCMesonCargoraw_RustCMakeTaskfileGoCmdOdinCmdDotNetCustomTool"
 
-var _Tool_index = [...]uint8{0, 5, 8, 15, 23, 32, 38, 49, 58, 63, 68, 77, 81, 89, 94, 101, 107}
+var _Tool_index = [...]uint8{0, 5, 8, 15, 23, 32, 38, 49, 58, 63, 68, 77, 81, 89, 94, 101, 107, 117}
 
 func (i Tool) String() string {
 	if i < 0 || i >= Tool(len(_Tool_index)-1) {

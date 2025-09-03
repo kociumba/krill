@@ -17,11 +17,12 @@ func _() {
 	_ = x[Odin-6]
 	_ = x[CSharp-7]
 	_ = x[FSharp-8]
+	_ = x[CustomLang-9]
 }
 
-const _Language_name = "CCppKotlinJavaRustGoOdinCSharpFSharp"
+const _Language_name = "CCppKotlinJavaRustGoOdinCSharpFSharpCustomLang"
 
-var _Language_index = [...]uint8{0, 1, 4, 10, 14, 18, 20, 24, 30, 36}
+var _Language_index = [...]uint8{0, 1, 4, 10, 14, 18, 20, 24, 30, 36, 46}
 
 func (i Language) String() string {
 	if i < 0 || i >= Language(len(_Language_index)-1) {

@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/kociumba/krill/build"
 	"github.com/kociumba/krill/config"
 	"github.com/kociumba/krill/git"
 	"github.com/kociumba/krill/integration"
+	"github.com/kociumba/krill/templating"
 	"github.com/urfave/cli/v3"
 )
 
@@ -120,66 +122,91 @@ var cmds = []*cli.Command{
 		},
 	},
 	{
-		Name:  "sync",
-		Usage: "Sync version numbers across config files and git tags",
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "revert",
-				Usage: "Revert sync if deployment fails",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			revert := cmd.Bool("revert")
-			if revert {
-				fmt.Println("Reverting last sync...")
-				// TODO: rollback version bump + tags
-			} else {
-				fmt.Println("Syncing version across project...")
-				// TODO: update files, create git tag
-			}
-			return nil
-		},
-	},
-	{
-		Name:  "version",
-		Usage: "Manage project version",
+		Name:  "debug",
+		Usage: "All debugging utilities are groupped under this subcommand",
 		Commands: []*cli.Command{
 			{
-				Name:  "show",
-				Usage: "Show current version",
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					fmt.Println("Current version: v0.1.0") // TODO: read from config
-					return nil
-				},
-			},
-			{
-				Name:  "bump",
-				Usage: "Bump version (major, minor, patch)",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "type",
-						Value: "patch",
-						Usage: "Type of bump (major, minor, patch)",
-					},
-				},
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					bumpType := cmd.String("type")
-					fmt.Printf("Bumping version (%s)...\n", bumpType)
-					// TODO: update config + tag
+				Name:  "expand-cfg",
+				Usage: "Loads, expands the template arguments and prints the current config file",
+				Action: func(ctx context.Context, c *cli.Command) error {
+					if !config.HasConfig {
+						fmt.Printf("The current direcory, does not contain a config file or it can not be loaded")
+						return nil
+					}
+
+					b, err := toml.Marshal(config.CFG)
+					if err != nil {
+						return err
+					}
+
+					fmt.Print(string(b))
+
 					return nil
 				},
 			},
 		},
 	},
-	{
-		Name:  "release",
-		Usage: "Create a release (build + tag + publish)",
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			fmt.Println("Releasing project...")
-			// TODO: run build, bump version, push tags, publish artifacts
-			return nil
-		},
-	},
+	// {
+	// 	Name:  "sync",
+	// 	Usage: "Sync version numbers across config files and git tags",
+	// 	Flags: []cli.Flag{
+	// 		&cli.BoolFlag{
+	// 			Name:  "revert",
+	// 			Usage: "Revert sync if deployment fails",
+	// 		},
+	// 	},
+	// 	Action: func(ctx context.Context, cmd *cli.Command) error {
+	// 		revert := cmd.Bool("revert")
+	// 		if revert {
+	// 			fmt.Println("Reverting last sync...")
+	// 			// TODO: rollback version bump + tags
+	// 		} else {
+	// 			fmt.Println("Syncing version across project...")
+	// 			// TODO: update files, create git tag
+	// 		}
+	// 		return nil
+	// 	},
+	// },
+	// {
+	// 	Name:  "version",
+	// 	Usage: "Manage project version",
+	// 	Commands: []*cli.Command{
+	// 		{
+	// 			Name:  "show",
+	// 			Usage: "Show current version",
+	// 			Action: func(ctx context.Context, cmd *cli.Command) error {
+	// 				fmt.Println("Current version: v0.1.0") // TODO: read from config
+	// 				return nil
+	// 			},
+	// 		},
+	// 		{
+	// 			Name:  "bump",
+	// 			Usage: "Bump version (major, minor, patch)",
+	// 			Flags: []cli.Flag{
+	// 				&cli.StringFlag{
+	// 					Name:  "type",
+	// 					Value: "patch",
+	// 					Usage: "Type of bump (major, minor, patch)",
+	// 				},
+	// 			},
+	// 			Action: func(ctx context.Context, cmd *cli.Command) error {
+	// 				bumpType := cmd.String("type")
+	// 				fmt.Printf("Bumping version (%s)...\n", bumpType)
+	// 				// TODO: update config + tag
+	// 				return nil
+	// 			},
+	// 		},
+	// 	},
+	// },
+	// {
+	// 	Name:  "release",
+	// 	Usage: "Create a release (build + tag + publish)",
+	// 	Action: func(ctx context.Context, cmd *cli.Command) error {
+	// 		fmt.Println("Releasing project...")
+	// 		// TODO: run build, bump version, push tags, publish artifacts
+	// 		return nil
+	// 	},
+	// },
 }
 
 var err error
@@ -188,6 +215,11 @@ func main() {
 	config.CFG, err = config.GetConfig()
 	if err == nil {
 		config.HasConfig = true
+	}
+
+	config.CFG, err = templating.ExpandConfig(config.CFG)
+	if err != nil {
+		log.Fatalf("could not expand templating arguments in config: %s", err)
 	}
 
 	if config.HasConfig {

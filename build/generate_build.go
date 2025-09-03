@@ -155,15 +155,15 @@ func DefaultTargetsForTool(tool config.Tool, artefact_name string, binType confi
 	case config.CMake:
 		targets["debug"] = config.BuildTarget{
 			Commands: []string{
-				"cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug",
-				"cmake --build cmake-build-debug",
+				"cmake -S . -B {{ .targets.debug.output_dir }} -DCMAKE_BUILD_TYPE=Debug",
+				"cmake --build {{ .targets.debug.output_dir }}",
 			},
 			OutputDir: "cmake-build-debug",
 		}
 		targets["release"] = config.BuildTarget{
 			Commands: []string{
-				"cmake -S . -B cmake-build-release -DCMAKE_BUILD_TYPE=Release",
-				"cmake --build cmake-build-release",
+				"cmake -S . -B {{ .targets.release.output_dir }} -DCMAKE_BUILD_TYPE=Release",
+				"cmake --build {{ .targets.release.output_dir }}",
 			},
 			OutputDir: "cmake-build-release",
 		}
@@ -179,15 +179,15 @@ func DefaultTargetsForTool(tool config.Tool, artefact_name string, binType confi
 	case config.Meson:
 		targets["debug"] = config.BuildTarget{
 			Commands: []string{
-				"meson setup meson-build-debug --buildtype=debug",
-				"meson compile -C meson-build-debug",
+				"meson setup {{ .targets.debug.output_dir }} --buildtype=debug",
+				"meson compile -C {{ .targets.debug.output_dir }}",
 			},
 			OutputDir: "meson-build-debug",
 		}
 		targets["release"] = config.BuildTarget{
 			Commands: []string{
-				"meson setup meson-build-release --buildtype=release",
-				"meson compile -C meson-build-release",
+				"meson setup {{ .targets.release.output_dir }} --buildtype=release",
+				"meson compile -C {{ .targets.release.output_dir }}",
 			},
 			OutputDir: "meson-build-release",
 		}
@@ -202,20 +202,20 @@ func DefaultTargetsForTool(tool config.Tool, artefact_name string, binType confi
 		}
 	case config.GoCmd:
 		targets["debug"] = config.BuildTarget{
-			Commands:  []string{"go build -gcflags=\"-N -l\" -o bin/debug/" + artefact_name},
+			Commands:  []string{"go build -gcflags=\"-N -l\" -o {{ .targets.debug.output_dir }}/{{ .project.name }}{{ .exe_ext }}"},
 			OutputDir: "bin/debug",
 		}
 		targets["release"] = config.BuildTarget{
-			Commands:  []string{"go build -ldflags=\"-s -w\" -o bin/release/" + artefact_name},
+			Commands:  []string{"go build -ldflags=\"-s -w\" -o {{ .targets.release.output_dir }}/{{ .project.name }}{{ .exe_ext }}"},
 			OutputDir: "bin/release",
 		}
 	case config.OdinCmd:
 		targets["debug"] = config.BuildTarget{
-			Commands:  []string{"odin build . -debug -out:bin/debug/" + artefact_name},
+			Commands:  []string{"odin build . -debug -out:{{ .targets.debug.output_dir }}/{{ .project.name }}{{ .exe_ext }}"},
 			OutputDir: "bin/debug",
 		}
 		targets["release"] = config.BuildTarget{
-			Commands:  []string{"odin build . -o:speed -out:bin/release/" + artefact_name},
+			Commands:  []string{"odin build . -o:speed -out:{{ .targets.release.output_dir }}/{{ .project.name }}{{ .exe_ext }}"},
 			OutputDir: "bin/release",
 		}
 	case config.DotNet:

@@ -8,12 +8,12 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Executable-1]
-	_ = x[SharedLib-2]
-	_ = x[DynamicLib-3]
-	_ = x[StaticLib-4]
-	_ = x[Object-5]
-	_ = x[Framework-6]
+	_ = x[Executable-0]
+	_ = x[SharedLib-1]
+	_ = x[DynamicLib-2]
+	_ = x[StaticLib-3]
+	_ = x[Object-4]
+	_ = x[Framework-5]
 }
 
 const _BinaryType_name = "ExecutableSharedLibDynamicLibStaticLibObjectFramework"
@@ -21,9 +21,8 @@ const _BinaryType_name = "ExecutableSharedLibDynamicLibStaticLibObjectFramework"
 var _BinaryType_index = [...]uint8{0, 10, 19, 29, 38, 44, 53}
 
 func (i BinaryType) String() string {
-	i -= 1
 	if i < 0 || i >= BinaryType(len(_BinaryType_index)-1) {
-		return "BinaryType(" + strconv.FormatInt(int64(i+1), 10) + ")"
+		return "BinaryType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _BinaryType_name[_BinaryType_index[i]:_BinaryType_index[i+1]]
 }
