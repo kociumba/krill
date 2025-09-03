@@ -26,6 +26,7 @@ func GenerateBuildCmds(cfg config.Cfg) []*cli.Command {
 			},
 		})
 	}
+
 	return subcommands
 }
 
@@ -39,9 +40,11 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 	if err != nil {
 		return err
 	}
+
 	if _, seen := visited[wd+"-"+targetName]; seen {
 		return fmt.Errorf("cycle detected at %s for target %s", wd, targetName)
 	}
+
 	visited[wd+"-"+targetName] = struct{}{}
 
 	// Build dependencies first
@@ -84,6 +87,7 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 			if err := os.Chdir(subDir); err != nil {
 				return err
 			}
+
 			defer os.Chdir(wd)
 			if err := buildTarget(ctx, &subCfg, subTarget, visited); err != nil {
 				return fmt.Errorf("failed building nested %s: %w", subPath, err)
@@ -115,6 +119,7 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 			if err != nil {
 				return err
 			}
+
 			cfg.Env = *env
 		}
 
@@ -266,6 +271,7 @@ func GenerateDefaultBuildTargets(cfg *config.Cfg) error {
 	if cfg.Project.BinaryType != 0 {
 		bin_type = cfg.Project.BinaryType
 	}
+
 	artefact_name += config.BinaryTypeToExt[bin_type]
 
 	isMulti := len(cfg.Project.Tools) > 1
@@ -279,6 +285,7 @@ func GenerateDefaultBuildTargets(cfg *config.Cfg) error {
 				break
 			}
 		}
+
 		if !supported {
 			isMulti = true
 		}
@@ -295,6 +302,7 @@ func GenerateDefaultBuildTargets(cfg *config.Cfg) error {
 			if isMulti {
 				newName = fmt.Sprintf("%s-%s", baseName, strings.ToLower(tool.String()))
 			}
+
 			cfg.BuildTargets[newName] = tgt
 
 			if isMulti {

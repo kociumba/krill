@@ -69,6 +69,7 @@ func DetectEnvironment(requireVsEnv bool) (*Environment, error) {
 			if ierr != nil {
 				return nil, ierr
 			}
+
 			return &Environment{
 				Path: "powershell.exe",
 				Args: []string{

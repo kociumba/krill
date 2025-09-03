@@ -12,7 +12,6 @@ var excludeDirs = map[string]struct{}{
 	".git":                {},
 	"node_modules":        {},
 	"vendor":              {},
-	"includes":            {},
 	"target":              {},
 	"bin":                 {},
 	"build":               {},
@@ -29,23 +28,27 @@ func DetectNestedProjects(root string) (map[string]config.NestedProject, error) 
 		if err != nil {
 			return err
 		}
+
 		if d.IsDir() {
 			if _, exclude := excludeDirs[d.Name()]; exclude {
 				return filepath.SkipDir
 			}
+
 			configPath := filepath.Join(path, "krill.toml")
 			if _, err := os.Stat(configPath); err == nil {
 				relPath, _ := filepath.Rel(root, path)
 				if relPath != "." {
 					nested[relPath] = config.NestedProject{Mappings: map[string]string{}}
-					// fmt.Printf("Detected nested Krill project at %s\n", relPath)
+					// fmt.Printf("Detected nested krill project at %s\n", relPath)
 				}
 			}
 		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return nested, nil
 }

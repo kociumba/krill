@@ -11,6 +11,7 @@ func CheckGitInstalled() bool {
 	if err := cmd.Run(); err != nil {
 		return false
 	}
+
 	return true
 }
 
@@ -21,6 +22,7 @@ func IsGitRepo() bool {
 	if err != nil {
 		return false
 	}
+
 	return strings.TrimSpace(string(out)) == "true"
 }
 
@@ -30,6 +32,7 @@ func CurrentBranch() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return strings.TrimSpace(string(out)), nil
 }
 
@@ -51,6 +54,7 @@ func CommitsAheadBehind() (ahead int, behind int, err error) {
 	if err != nil {
 		return 0, 0, err
 	}
+
 	return aheadCount, behindCount, nil
 }
 
@@ -67,11 +71,12 @@ func UncommittedFiles() ([]string, error) {
 		if line == "" {
 			continue
 		}
-		// Keep the status letters (first two characters) and the file name
+
 		status := line[:2]
 		file := strings.TrimSpace(line[3:])
 		files = append(files, fmt.Sprintf("%s %s", status, file))
 	}
+
 	return files, nil
 }
 
@@ -89,6 +94,7 @@ func ConflictedFiles() ([]string, error) {
 			files = append(files, line)
 		}
 	}
+
 	return files, nil
 }
 
@@ -102,7 +108,6 @@ func FormatGitStatusString() string {
 		branch = "?"
 	}
 
-	// Get ahead/behind counts
 	ahead, behind, _ := CommitsAheadBehind()
 
 	uncommitted, _ := UncommittedFiles()
@@ -110,10 +115,8 @@ func FormatGitStatusString() string {
 
 	var b strings.Builder
 
-	// Use a consistent two-space indent for all lines
 	const indent = "  "
 
-	// Format branch with ahead/behind arrows, using '@' instead of '' for better alignment
 	branchStatus := branch
 	if ahead > 0 || behind > 0 {
 		branchStatus += " "
@@ -124,9 +127,9 @@ func FormatGitStatusString() string {
 			branchStatus += fmt.Sprintf("↓%d", behind)
 		}
 	}
+
 	fmt.Fprintf(&b, " %s\n", branchStatus)
 
-	// Add consistent spacing between sections
 	fmt.Fprintln(&b)
 
 	hasUncommitted := len(uncommitted) > 0
@@ -138,6 +141,7 @@ func FormatGitStatusString() string {
 		for _, file := range uncommitted {
 			fmt.Fprintf(&b, "%s  %s\n", indent, file)
 		}
+
 		fmt.Fprintln(&b)
 		fmt.Fprintf(&b, "%sConflicts:\n", indent)
 		for _, file := range conflicts {

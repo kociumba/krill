@@ -26,18 +26,21 @@ func InitProject() error {
 	if err != nil {
 		fmt.Printf("Could not determine the project version using default '%s'\n", ver.StringV())
 	}
+
 	config.CFG.Project.Version = ver.String()
 
 	tools := config.DetectTools(wd)
 	if len(tools) == 0 {
 		fmt.Println("No tools supported by krill have been found in this directory")
 	}
+
 	config.CFG.Project.Tools = tools
 
 	langs := config.DetectLanguages(wd, tools)
 	if len(langs) == 0 {
 		fmt.Println("No languages supported by krill have been found in this directory")
 	}
+
 	config.CFG.Project.Languages = langs
 
 	env, err := config.DetectEnvironment(slices.Contains(langs, config.C) || slices.Contains(langs, config.Cpp))
@@ -52,6 +55,7 @@ func InitProject() error {
 	if err != nil {
 		return err
 	}
+
 	config.CFG.Nested = nested
 
 	err = config.SaveConfig(config.CFG)

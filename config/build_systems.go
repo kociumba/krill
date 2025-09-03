@@ -35,12 +35,13 @@ func (l Language) MarshalText() ([]byte, error) {
 }
 
 func (l *Language) UnmarshalText(text []byte) error {
-	for i := Language(0); i < Language(len(_Language_index)-1); i++ {
+	for i := range Language(len(_Language_index) - 1) {
 		if i.String() == string(text) {
 			*l = i
 			return nil
 		}
 	}
+
 	return fmt.Errorf("unknown language: %s", text)
 }
 
@@ -69,12 +70,13 @@ func (t Tool) MarshalText() ([]byte, error) {
 }
 
 func (t *Tool) UnmarshalText(text []byte) error {
-	for i := Tool(0); i < Tool(len(_Tool_index)-1); i++ {
+	for i := range Tool(len(_Tool_index) - 1) {
 		if i.String() == string(text) {
 			*t = i
 			return nil
 		}
 	}
+
 	return fmt.Errorf("unknown tool: %s", text)
 }
 
@@ -92,12 +94,13 @@ func (b BinaryType) MarshalText() ([]byte, error) {
 }
 
 func (b *BinaryType) UnmarshalText(text []byte) error {
-	for i := BinaryType(0); i < BinaryType(len(_BinaryType_index)-1); i++ {
+	for i := range BinaryType(len(_BinaryType_index) - 1) {
 		if i.String() == string(text) {
 			*b = i
 			return nil
 		}
 	}
+
 	return fmt.Errorf("unknown tool: %s", text)
 }
 
@@ -272,5 +275,6 @@ func DetectLanguages(root string, tools []Tool) []Language {
 	for l := range langs {
 		out = append(out, l)
 	}
+
 	return out
 }

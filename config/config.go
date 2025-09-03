@@ -46,6 +46,7 @@ func EqualTools(a, b []Tool) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	as, bs := slices.Clone(a), slices.Clone(b)
 	slices.Sort(as)
 	slices.Sort(bs)
@@ -54,6 +55,7 @@ func EqualTools(a, b []Tool) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -61,6 +63,7 @@ func EqualLanguages(a, b []Language) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	as, bs := slices.Clone(a), slices.Clone(b)
 	slices.Sort(as)
 	slices.Sort(bs)
@@ -69,6 +72,7 @@ func EqualLanguages(a, b []Language) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -76,14 +80,17 @@ func EqualEnv(a, b Environment) bool {
 	if a.Path != b.Path {
 		return false
 	}
+
 	if len(a.Args) != len(b.Args) {
 		return false
 	}
+
 	for i := range a.Args {
 		if a.Args[i] != b.Args[i] {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -91,20 +98,24 @@ func EqualNested(a, b map[string]NestedProject) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for k, va := range a {
 		vb, ok := b[k]
 		if !ok {
 			return false
 		}
+
 		if len(va.Mappings) != len(vb.Mappings) {
 			return false
 		}
+
 		for mk, mv := range va.Mappings {
 			if vb.Mappings[mk] != mv {
 				return false
 			}
 		}
 	}
+
 	return true
 }
 
@@ -117,6 +128,7 @@ func (p *Project) UnmarshalTOML(data any) error {
 	if name, ok := m["name"].(string); ok {
 		p.Name = name
 	}
+
 	if version, ok := m["version"].(string); ok {
 		p.Version = version
 	}
@@ -128,10 +140,12 @@ func (p *Project) UnmarshalTOML(data any) error {
 			if !ok {
 				return fmt.Errorf("language at index %d is not a string: %T", i, lang)
 			}
+
 			var l Language
 			if err := l.UnmarshalText([]byte(langStr)); err != nil {
 				return fmt.Errorf("failed to unmarshal language %q: %w", langStr, err)
 			}
+
 			p.Languages[i] = l
 		}
 	}
@@ -143,10 +157,12 @@ func (p *Project) UnmarshalTOML(data any) error {
 			if !ok {
 				return fmt.Errorf("tool at index %d is not a string: %T", i, tool)
 			}
+
 			var t Tool
 			if err := t.UnmarshalText([]byte(toolStr)); err != nil {
 				return fmt.Errorf("failed to unmarshal tool %q: %w", toolStr, err)
 			}
+
 			p.Tools[i] = t
 		}
 	}
@@ -186,6 +202,7 @@ func SaveConfig(cfg Cfg) error {
 		if err != nil {
 			return fmt.Errorf("failed to create config file: %w", err)
 		}
+
 		f.Close()
 	}
 

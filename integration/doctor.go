@@ -64,7 +64,6 @@ func Doctor(save_changes, show_diff bool) error {
 	} else {
 		fixedCfg = config.CFG
 
-		// Check tooling configuration
 		detected_tools := config.DetectTools(wd)
 		isMulti := len(detected_tools) > 1 || len(config.DetectLanguages(wd, detected_tools)) > 1
 		wasMulti := len(config.CFG.Project.Tools) > 1 || len(config.CFG.Project.Languages) > 1
@@ -107,19 +106,6 @@ func Doctor(save_changes, show_diff bool) error {
 				fixedCfg.Project.Languages = detected_langs
 			}
 		}
-
-		// env, err := config.DetectEnvironment(
-		// 	slices.Contains(detected_langs, config.C) || slices.Contains(detected_langs, config.Cpp),
-		// )
-		// if err == nil && !config.EqualEnv(config.CFG.Env, *env) {
-		// 	issues = append(issues, Issue{
-		// 		Category:    "Environment",
-		// 		Level:       "warning",
-		// 		Description: "Environment settings differ from detected values",
-		// 		Fix:         "Update environment configuration",
-		// 	})
-		// 	fixedCfg.Env = *env
-		// }
 
 		nested, err := DetectNestedProjects(wd)
 		if err == nil && !config.EqualNested(config.CFG.Nested, nested) {
@@ -188,12 +174,15 @@ func printDoctorResults(issues []Issue) {
 	if errorCount > 0 {
 		fmt.Printf("  %s%d error(s)%s\n", ColorRed, errorCount, ColorReset)
 	}
+
 	if warningCount > 0 {
 		fmt.Printf("  %s%d warning(s)%s\n", ColorYellow, warningCount, ColorReset)
 	}
+
 	if infoCount > 0 {
 		fmt.Printf("  %s%d info message(s)%s\n", ColorBlue, infoCount, ColorReset)
 	}
+
 	fmt.Println()
 }
 
@@ -274,6 +263,7 @@ func countIssuesByLevel(issues []Issue, level string) int {
 			count++
 		}
 	}
+
 	return count
 }
 
@@ -283,5 +273,6 @@ func hasFixableIssues(issues []Issue) bool {
 			return true
 		}
 	}
+
 	return false
 }

@@ -78,5 +78,6 @@ func GetVersion() (Version, error) {
 	}
 
 	tag := strings.TrimSpace(string(out))
+
 	return ParseVersion(tag)
 }

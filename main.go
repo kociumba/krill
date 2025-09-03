@@ -53,6 +53,7 @@ var cmds = []*cli.Command{
 			if err != nil {
 				return err
 			}
+
 			fmt.Printf("Initialized project '%s'\n", config.CFG.Project.Name)
 			// fmt.Printf("\nEdit 'krill.toml' to manage this project\n")
 			return nil
