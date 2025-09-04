@@ -52,7 +52,7 @@ languages = ["C", "Cpp"]
 tools = ["CMake"]
 version = "0.0.0"
 
-[env]
+[env.windows]
 path = "powershell.exe"
 args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
 
@@ -72,10 +72,11 @@ args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch 
     ]
 ```
 
-> [!NOTE]
-> Sub projects are supported by providing a `krill.toml` in the subdirectory, which then provides targets for the sub project.
->
-> Note that the syntax for defining target mappings between projects is ugly as shit and will have to be adjusted in the future.
+`krill init` will try to find and generate the default enviornment for your platform, this means it will generate:
+- powershell or cmd with vs developer setup, if you are on windows and the project uses C or C++
+- powershell on windows with default arguments
+- zsh on macOS with default arguments
+- bash on linux with default arguments
 
 A more mature, edited config for the same project might look something like this:
 
@@ -87,7 +88,7 @@ languages = ["C", "Cpp"]
 tools = ["CMake"]
 version = "1.6.5"
 
-[env]
+[env.windows]
 path = "powershell.exe"
 args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
 
@@ -113,11 +114,11 @@ args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch 
 
 [nested]
 [nested.sub_project]
-[nested.sub_project_mappings]
-run = "custom-run-target"
-debug = "custom-debug-target"
-release = "custom-release-target"
+mappings = { run = "custom-run-target", debug = "custom-debug-target", release = "custom-release-target" }
 ```
+
+> [!NOTE]
+> Sub projects are supported by providing a `krill.toml` in the subdirectory, which then provides targets for the sub project.
 
 ## Supported
 

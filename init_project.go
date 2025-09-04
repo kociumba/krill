@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 
 	"github.com/kociumba/krill/build"
@@ -44,7 +45,7 @@ func InitProject() error {
 	config.CFG.Project.Languages = langs
 
 	env, err := config.DetectEnvironment(slices.Contains(langs, config.C) || slices.Contains(langs, config.Cpp))
-	config.CFG.Env = *env
+	config.CFG.Env[runtime.GOOS] = *env
 
 	err = build.GenerateDefaultBuildTargets(&config.CFG)
 	if err != nil {

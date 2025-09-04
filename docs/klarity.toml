@@ -1,8 +1,8 @@
 title = "krill docs"
 output_dir = "public"
 base_url = "https://kociumba.github.io/krill/"
-doc_dirs = ["."]
-entry = "main.md"
+doc_dirs = ["./content"]
+entry = "./content/main.md"
 ignore_out = true
 
 [visual]

@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -41,13 +42,14 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 		return err
 	}
 
+	had_to_detect_env := false
+
 	if _, seen := visited[wd+"-"+targetName]; seen {
 		return fmt.Errorf("cycle detected at %s for target %s", wd, targetName)
 	}
 
 	visited[wd+"-"+targetName] = struct{}{}
 
-	// Build dependencies first
 	for _, dep := range target.DependsOn {
 		if err := buildTarget(ctx, cfg, dep, visited); err != nil {
 			return fmt.Errorf("dependency %s failed: %w", dep, err)
@@ -112,7 +114,7 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 	for _, cmd := range target.Commands {
 		fmt.Println("Running:", cmd)
 
-		if cfg.Env.Path == "" {
+		if cfg.Env[runtime.GOOS].Path == "" {
 			env, err := config.DetectEnvironment(
 				slices.Contains(cfg.Project.Languages, config.C) ||
 					slices.Contains(cfg.Project.Languages, config.Cpp))
@@ -120,13 +122,14 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 				return err
 			}
 
-			cfg.Env = *env
+			had_to_detect_env = true
+			cfg.Env[runtime.GOOS] = *env
 		}
 
-		args := make([]string, len(cfg.Env.Args))
-		copy(args, cfg.Env.Args)
+		args := make([]string, len(cfg.Env[runtime.GOOS].Args))
+		copy(args, cfg.Env[runtime.GOOS].Args)
 
-		switch cfg.Env.Path {
+		switch cfg.Env[runtime.GOOS].Path {
 		case "powershell.exe":
 			if len(args) > 0 && args[len(args)-1] == "-Command" {
 				args = append(args, cmd)
@@ -139,7 +142,7 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 			args = append(args, cmd)
 		}
 
-		run := exec.CommandContext(ctx, cfg.Env.Path, args...)
+		run := exec.CommandContext(ctx, cfg.Env[runtime.GOOS].Path, args...)
 		run.Dir = wd
 		run.Stderr = os.Stderr
 		run.Stdout = os.Stdout
@@ -147,6 +150,31 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 
 		if err := run.Run(); err != nil {
 			return fmt.Errorf("command %q failed: %w", cmd, err)
+		}
+	}
+
+	if had_to_detect_env {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Printf("krill had to detect a default env during this compilation, because '[env.%s]' is not defined in the current config.\n", runtime.GOOS)
+		fmt.Print("Do you want to save the detected env to the config? [y/N]: ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
+
+		input = strings.TrimSpace(input)
+		input = strings.ToLower(input)
+
+		switch input {
+		case "y", "yes":
+			err := config.SaveConfig(config.CFG)
+			if err != nil {
+				return err
+			}
+		case "n", "no":
+			return nil
+		default:
+			return nil
 		}
 	}
 

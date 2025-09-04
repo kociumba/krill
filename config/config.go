@@ -16,7 +16,7 @@ var CFG Cfg
 
 type Cfg struct {
 	Project      Project                  `toml:"project,omitempty"`
-	Env          Environment              `toml:"env,omitempty"`
+	Env          map[string]Environment   `toml:"env,omitempty"`
 	BuildTargets map[string]BuildTarget   `toml:"targets,omitempty"`
 	Nested       map[string]NestedProject `toml:"nested,omitempty"`
 }

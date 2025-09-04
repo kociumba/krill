@@ -16,7 +16,7 @@ languages = ["C", "Cpp"]
 tools = ["CMake"]
 version = "0.1.0"
 
-[env]
+[env.windows]
 path = "powershell.exe"
 args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
 
@@ -48,7 +48,7 @@ languages = ["Rust"]
 tools = ["Cargo"]
 version = "0.1.0"
 
-[env]
+[env.linux]
 path = "/bin/bash"
 args = ["-c"]
 
@@ -74,7 +74,7 @@ languages = ["Go"]
 tools = ["GoCmd"]
 version = "0.1.0"
 
-[env]
+[env.linux]
 path = "/bin/bash"
 args = ["-c"]
 
@@ -100,7 +100,7 @@ languages = ["Java"]
 tools = ["Gradle"]
 version = "0.1.0"
 
-[env]
+[env.darwin]
 path = "/bin/zsh"
 args = ["-c"]
 
@@ -128,7 +128,7 @@ languages = ["CustomLang"]
 tools = ["CustomTool"]
 version = "0.1.0"
 
-[env]
+[env.linux]
 path = "/usr/bin/fish"
 args = ["-c"]
 
@@ -156,4 +156,4 @@ release = "release"
 
 ---
 
-See [Configuration Reference](config.md) for more details on each section.
+See [[config.md]] for more details on each section.

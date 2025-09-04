@@ -14,7 +14,7 @@ languages = ["C", "Cpp"]
 tools = ["CMake"]
 version = "0.1.0"
 
-[env]
+[env.windows]
 path = "powershell.exe"
 args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
 
