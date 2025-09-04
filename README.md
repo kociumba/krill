@@ -138,7 +138,7 @@ and since krill only automatically executes a commands for a target in the provi
 
 ---
 
-For more info, run `krill --help` or look take a look at the [docs]().
+For more info, run `krill --help` or look take a look at the [docs](https://kociumba.github.io/krill/).
 
 to see all available language and tools names that krill recognizes, look in [./config/build_systems.go](./config/build_systems.go)
 
