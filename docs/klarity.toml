@@ -1,0 +1,25 @@
+title = "krill docs"
+output_dir = "public"
+base_url = "https://kociumba.github.io/krill/"
+doc_dirs = ["."]
+entry = "main.md"
+ignore_out = true
+
+[visual]
+theme = "evergarden"
+use_spa = true
+
+[visual.vars]
+bg_main = "#222323"
+bg_panel = "#2B2D2F"
+bg_hover = "#36383A"
+bg_active = "#444648"
+border_soft = "#5A5D61"
+border_hard = "#686C70"
+accent_primary = "#7FF0DA"
+accent_secondary = "#B1A6F7"
+text_main = "#E8ECF2"
+text_dim = "#BCC5D1"
+
+[dev]
+port = 5173

@@ -2,95 +2,144 @@
 
 <img align="right" src="https://raw.githubusercontent.com/kociumba/krill/main/assets/krill_icon.svg" alt="krill icon" width="150" height="150"/>
 
-A meta project manager to simplify your workflow.
+krill is a small project manager that helps you build, run, and manage projects across different languages and build systems. It works by reading a simple config file and providing a few commands to make common tasks easier.
 
-krill sits on top of your existing build systems, providing a single, unified interface to build, run, and manage any project, regardless of the language or toolchain.
+## What does it do?
 
-## The Problem
+- Initializes a project config (`krill init`)
+- Runs the commands defined under a specific target (`krill run <target>`)
+- Shows project status (`krill status`)
+- Checks your setup and config for issues, can automatically suggest fixes (`krill doctor`)
+- All debug functionality, useful if anything works unexpectedly (`krill debug <command>`)
 
-Let's be honest, using build systems like CMake directly can be a pain. Remembering, typing, and saving long, complex commands is tedious.
+To get more info on any of these simply use `-h` or `--help`, which is contextual and works on each command separately.
 
-For example, configuring an average CMake project often looks something like this:
+## Why use it?
+
+If you're tired of writing custom build scripts or remembering long build commands for every project, krill gives you a single config and a few commands to handle it all. It tries to detect your build system and language, and generates a starting config for you.
+
+This auto generated config is more than enough for simple projects, but more mature ones will probably want to edit them with custom requirments.
+
+## Quickstart
+
+Install krill:
 
 ```bash
-cmake -S . -B cmake-build-release \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/my-app \
-  -DENABLE_TESTS=ON \
-  -DENABLE_EXAMPLES=OFF \
-  -DAPPLICATION_VERSION=1.2.3 \
-  -DSOME_LIBRARY_PATH=/usr/lib/some-library
-
-cmake --build cmake-build-release
+go install github.com/kociumba/krill
 ```
 
-Many developers solve this by writing custom `build.sh` or `build.py` scripts, but that introduces new dependencies and boilerplate for every project.
-
-## krills solution
-
-krill replaces those messy scripts with a simple, declarative configuration file. It detects your project's tools and languages and generates a basic starting point, allowing you to manage your entire workflow with simple commands.
-
-With krill, the annoying cmake command from above becomes just:
+Initialize in your project (some functionality does not require a config):
 
 ```bash
-# Initialize your project with defaults (only needs to be done once)
 krill init
-
-# Build the release target
-krill build release
 ```
 
-### Core Features
-- Auto-Detection: krill automatically detects your language and build system (CMake, Cargo, Gradle, etc.) to generate a working configuration.
+Run a target (like the default `debug` or `release`):
 
-- Simple, Declarative Config: Define your build targets in a straightforward TOML file. No more scripting required.
+```bash
+krill run target-name
+```
 
-- Unified Interface: Use the same commands across all types of projects (C++, Rust, Java, Go, and more).
+## Example: CMake Project
 
-- Environment Management: builds requireing special enviornments are easely setup using project enviornments.
-
-## How It Works
-
-krill works by reading a `krill.toml` file in your project's root directory. When you run `krill init`, it scans for markers like `CMakeLists.txt`, `Cargo.toml`, or `go.mod` and creates a `krill.toml` file for you with basic defaults for the detected tools and languages.
-
-Here's what a generated config for a C/C++ CMake project might look like:
+A generated `krill.toml` for a C/C++ project using CMake might look like:
 
 ```toml
-# krill.toml
-
 [project]
-  name = "my-awesome-project"
-  binary_type = "Executable"
-  languages = ["C", "Cpp"]
-  tools = ["CMake"]
-  version = "0.0.0"
+name = "detected_project"
+binary_type = "Executable"
+languages = ["C", "Cpp"]
+tools = ["CMake"]
+version = "0.0.0"
 
-# Example of setting up the Visual Studio build environment on Windows
 [env]
-  path = "powershell.exe"
-  args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
+path = "powershell.exe"
+args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
 
-# Define your build targets
 [targets]
-  [targets.debug]
-    # Use templating to reference other values in the config
-    output_dir = "build/debug"
+[targets.debug]
+    output_dir = "cmake-build-debug"
     commands = [
       "cmake -S . -B {{ .targets.debug.output_dir }} -DCMAKE_BUILD_TYPE=Debug",
       "cmake --build {{ .targets.debug.output_dir }}"
     ]
-    
-  [targets.release]
-    output_dir = "build/release"
+
+[targets.release]
+    output_dir = "cmake-build-release"
     commands = [
       "cmake -S . -B {{ .targets.release.output_dir }} -DCMAKE_BUILD_TYPE=Release",
       "cmake --build {{ .targets.release.output_dir }}"
     ]
 ```
 
-## Supported Platforms
+> [!NOTE]
+> Sub projects are supported by providing a `krill.toml` in the subdirectory, which then provides targets for the sub project.
+>
+> Note that the syntax for defining target mappings between projects is ugly as shit and will have to be adjusted in the future.
 
-krill aims to support a wide variety of languages and their common build tools out of the box.
+A more mature, edited config for the same project might look something like this:
+
+```toml
+[project]
+name = "detected_project"
+binary_type = "Executable"
+languages = ["C", "Cpp"]
+tools = ["CMake"]
+version = "1.6.5"
+
+[env]
+path = "powershell.exe"
+args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch amd64 }"]
+
+[targets]
+[targets.run]
+    depends_on = ["debug"]
+    commands = ["{{ .targets.debug.output_dir }}/{{ .project.name }}{{ .exe_ext }}"]
+
+[targets.debug]
+    output_dir = "cmake-build-debug"
+    commands = [
+      "cmake -S . -B {{ .targets.debug.output_dir }} -DCMAKE_BUILD_TYPE=Debug",
+      "cmake --build {{ .targets.debug.output_dir }}"
+    ]
+
+[targets.release]
+    output_dir = "cmake-build-release"
+    commands = [
+      "cmake -S . -B {{ .targets.release.output_dir }} -DCMAKE_BUILD_TYPE=Release 
+      -DBUILD_SHARED_LIBS=OFF",
+      "cmake --build {{ .targets.release.output_dir }}"
+    ]
+
+[nested]
+[nested.sub_project]
+[nested.sub_project_mappings]
+run = "custom-run-target"
+debug = "custom-debug-target"
+release = "custom-release-target"
+```
+
+## Supported
 
 - Languages: C, C++, C#, F#, Go, Java, Kotlin, Odin, Rust
-- Tools: CMake, Cargo, DotNet, Go, Gradle, Make, Meson, Nob, Taskfile, and direct compiler support (GCC, Clang, MSVC, JavaC, etc.) for simple projects.
+- Tools: CMake, Cargo, DotNet, Go, Gradle, Make, Meson, Nob, Taskfile, and direct compiler support (GCC, Clang, MSVC, JavaC, etc.)
+
+If your tool or language is not supported by krill, you can use:
+
+```toml
+languages = ["CustomLang"]
+tools = ["CustomTool"]
+```
+
+and since krill only automatically executes a commands for a target in the provided environment you can set up your build and targets however you want.
+
+> [!WARNING]
+> Support for raw compiler tools is quite unfinished right now, as they can not be supported the same way cmake or meson can be out of the box. But as said above anything that works with a command will also work with krill, using a custom target
+
+---
+
+For more info, run `krill --help` or look take a look at the [docs]().
+
+to see all available language and tools names that krill recognizes, look in [./config/build_systems.go](./config/build_systems.go)
+
+to see what the default generated builds for each tool are, take a look in [./build/generate_build.go](./build/generate_build.go) 

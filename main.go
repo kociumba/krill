@@ -77,8 +77,8 @@ var cmds = []*cli.Command{
 		},
 	},
 	{
-		Name:     "build",
-		Usage:    "Build the krill project",
+		Name:     "run",
+		Usage:    "run targets defined in the config file",
 		HideHelp: true,
 	},
 	{
@@ -140,6 +140,18 @@ var cmds = []*cli.Command{
 						return err
 					}
 
+					fmt.Print(string(b))
+
+					return nil
+				},
+			},
+			{
+				Name:  "random-cfg",
+				Usage: "Creates, marshals and prints a full config file with randomized data",
+				Action: func(ctx context.Context, c *cli.Command) error {
+					cfg := config.Cfg{}
+					config.FillRandom(&cfg)
+					b, _ := toml.Marshal(cfg)
 					fmt.Print(string(b))
 
 					return nil
@@ -229,13 +241,13 @@ func main() {
 		}
 	} else {
 		build_action = func(ctx context.Context, cmd *cli.Command) error {
-			return fmt.Errorf("'krill build' is not supproted without a config, use 'krill init' first")
+			return fmt.Errorf("'krill run' is not supproted without a config, use 'krill init' first")
 		}
 		build_cmds = nil
 	}
 
 	for _, c := range cmds {
-		if c.Name == "build" {
+		if c.Name == "run" {
 			if build_cmds != nil {
 				c.Commands = build_cmds
 				c.DefaultCommand = build_cmds[0].Name

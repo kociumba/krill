@@ -65,16 +65,25 @@ func UncommittedFiles() ([]string, error) {
 		return nil, err
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	var files []string
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	for _, line := range lines {
 		if line == "" {
 			continue
 		}
 
-		status := line[:2]
-		file := strings.TrimSpace(line[3:])
-		files = append(files, fmt.Sprintf("%s %s", status, file))
+		status := strings.TrimSpace(line[:2])
+		rest := strings.TrimSpace(line[2:])
+
+		if strings.Contains(rest, " -> ") {
+			parts := strings.SplitN(rest, " -> ", 2)
+			if len(parts) == 2 {
+				files = append(files, fmt.Sprintf("%s %s -> %s", status, parts[0], parts[1]))
+				continue
+			}
+		}
+
+		files = append(files, fmt.Sprintf("%s %s", status, rest))
 	}
 
 	return files, nil
