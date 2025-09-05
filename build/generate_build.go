@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/kociumba/krill/cli_utils"
 	"github.com/kociumba/krill/config"
 	"github.com/urfave/cli/v3"
 )
@@ -154,27 +154,19 @@ func buildTarget(ctx context.Context, cfg *config.Cfg, targetName string, visite
 	}
 
 	if had_to_detect_env {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("krill had to detect a default env during this compilation, because '[env.%s]' is not defined in the current config.\n", runtime.GOOS)
-		fmt.Print("Do you want to save the detected env to the config? [y/N]: ")
-		input, err := reader.ReadString('\n')
+		ok, err := cli_utils.Prompt(fmt.Sprintf(
+			"krill had to detect a default env during this compilation, because '[env.%s]' is not defined in the current config.\nDo you want to save the detected env to the config?",
+			runtime.GOOS,
+		))
 		if err != nil {
 			return err
 		}
 
-		input = strings.TrimSpace(input)
-		input = strings.ToLower(input)
-
-		switch input {
-		case "y", "yes":
-			err := config.SaveConfig(config.CFG)
-			if err != nil {
+		if ok {
+			config.CFG_unexpanded.Env[runtime.GOOS] = cfg.Env[runtime.GOOS]
+			if err := config.SaveConfig(config.CFG_unexpanded); err != nil {
 				return err
 			}
-		case "n", "no":
-			return nil
-		default:
-			return nil
 		}
 	}
 

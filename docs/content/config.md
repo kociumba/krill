@@ -35,13 +35,8 @@ args = ["-NoProfile", "-Command", "& { . 'C:\\...\\Launch-VsDevShell.ps1' -Arch 
 
 [nested]
 [nested.sub_project]
-[nested.sub_project.mappings]
-debug = "custom-debug"
-release = "custom-release"
+mappings = { debug = "custom-debug", release = "custom-release" }
 ```
-
-> [!NOTE]
-> The syntax for defining target mappings between projects is ugly as shit and will have to be adjusted in the future.
 
 ---
 

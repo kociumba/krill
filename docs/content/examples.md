@@ -149,9 +149,7 @@ To add a subproject, place a `krill.toml` in the subdirectory and reference it i
 ```toml
 [nested]
 [nested.subdir]
-[nested.subdir.mappings]
-debug = "debug"
-release = "release"
+mappings = { debug = "debug", release = "release" }
 ```
 
 ---

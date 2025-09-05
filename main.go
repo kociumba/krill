@@ -1,16 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/kociumba/krill/build"
+	"github.com/kociumba/krill/cli_utils"
 	"github.com/kociumba/krill/config"
 	"github.com/kociumba/krill/git"
 	"github.com/kociumba/krill/integration"
@@ -28,23 +27,22 @@ var cmds = []*cli.Command{
 		Usage: "Initialize a new project (create config, detect build system, etc.)",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if config.HasConfig {
-				reader := bufio.NewReader(os.Stdin)
-				fmt.Println("The current directory already has an initialized krill project.")
-				fmt.Print("Reinitialize? [y/N]: ")
-				input, err := reader.ReadString('\n')
+				ok, err := cli_utils.Prompt("The current directory already has an initialized krill project.\nReinitialize?")
 				if err != nil {
 					return err
 				}
 
-				input = strings.TrimSpace(input)
-				input = strings.ToLower(input)
-
-				switch input {
-				case "y", "yes":
+				if ok {
 					os.Remove("krill.toml")
-				case "n", "no":
-					return nil
-				default:
+				} else {
+					if cli_utils.SkipNO {
+						fmt.Println("skipped reinitializing the project config since it already exists and promps are skipped using 'no'")
+					}
+
+					if cli_utils.SkipYES {
+						fmt.Println("reinitialized the project config, since prompts are skipped using 'yes'")
+					}
+
 					return nil
 				}
 			}
@@ -225,12 +223,12 @@ var cmds = []*cli.Command{
 var err error
 
 func main() {
-	config.CFG, err = config.GetConfig()
+	config.CFG_unexpanded, err = config.GetConfig()
 	if err == nil {
 		config.HasConfig = true
 	}
 
-	config.CFG, err = templating.ExpandConfig(config.CFG)
+	config.CFG, err = templating.ExpandConfig(config.CFG_unexpanded)
 	if err != nil {
 		log.Fatalf("could not expand templating arguments in config: %s", err)
 	}
@@ -261,6 +259,24 @@ func main() {
 		Name:     "krill",
 		Usage:    "A simple language agnostic project manager, to make using other tools more pleasant",
 		Commands: cmds,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "yes",
+				Aliases: []string{"y"},
+				Usage:   "run in non interactive mode, all yes/no prompts will assume a 'yes' anwser",
+			},
+			&cli.BoolFlag{
+				Name:    "no",
+				Aliases: []string{"n"},
+				Usage:   "run in non interactive mode, all yes/no prompts will assume a 'no' anwser",
+			},
+		},
+		Before: func(ctx context.Context, c *cli.Command) (context.Context, error) {
+			cli_utils.SkipNO = c.Bool("no")
+			cli_utils.SkipYES = c.Bool("yes")
+
+			return ctx, nil
+		},
 	}
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {

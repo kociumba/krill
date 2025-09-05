@@ -13,6 +13,7 @@ import (
 var cfg_file = "krill.toml"
 var HasConfig = false
 var CFG Cfg
+var CFG_unexpanded Cfg
 
 type Cfg struct {
 	Project      Project                  `toml:"project,omitempty"`
