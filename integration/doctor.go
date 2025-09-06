@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/kociumba/krill/build"
@@ -125,7 +126,14 @@ func displayDoctorResults(issues []Issue) {
 	cli_utils.PrintHeader("Krill Doctor Results", cli_utils.ColorCyan)
 
 	if len(issues) == 0 {
-		cli_utils.PrintNoIssuesFound("your project")
+		var projectName string
+		if config.HasConfig {
+			projectName = config.CFG.Project.Name
+		} else {
+			wd, _ := os.Getwd()
+			projectName = filepath.Base(wd)
+		}
+		cli_utils.PrintNoIssuesFound(projectName)
 		return
 	}
 
@@ -135,7 +143,7 @@ func displayDoctorResults(issues []Issue) {
 		cli_utils.PrintSubHeader(category+" Issues", cli_utils.ColorBlue)
 
 		for _, issue := range categoryIssues {
-			cli_utils.PrintMessage(issue.Level, issue.Description)
+			cli_utils.PrintIndentedMessageLevel(2, issue.Level, issue.Description)
 			if issue.Fix != "" {
 				cli_utils.PrintIndentedMessage(4, cli_utils.SymbolFix, cli_utils.ColorGray, issue.Fix)
 			}

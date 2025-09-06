@@ -12,6 +12,6 @@ const (
 	SymbolError   = "✗"
 	SymbolWarning = "⚠"
 	SymbolSuccess = "✓"
-	SymbolInfo    = "ℹ"
+	SymbolInfo    = "🛈"
 	SymbolFix     = "→"
 )

@@ -48,10 +48,16 @@ func GetLevelFormatting(level MessageLevel) (string, string) {
 
 func PrintMessage(level MessageLevel, message string) {
 	symbol, color := GetLevelFormatting(level)
-	fmt.Printf("  %s%s%s %s\n", color, symbol, ColorReset, message)
+	fmt.Printf("%s%s%s %s\n", color, symbol, ColorReset, message)
 }
 
 func PrintIndentedMessage(indent int, symbol, color, message string) {
+	indentStr := strings.Repeat(" ", indent)
+	fmt.Printf("%s%s%s%s %s\n", indentStr, color, symbol, ColorReset, message)
+}
+
+func PrintIndentedMessageLevel(indent int, level MessageLevel, message string) {
+	symbol, color := GetLevelFormatting(level)
 	indentStr := strings.Repeat(" ", indent)
 	fmt.Printf("%s%s%s%s %s\n", indentStr, color, symbol, ColorReset, message)
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/kociumba/krill/cli_utils"
 )
 
 func CheckGitInstalled() bool {
@@ -107,6 +109,64 @@ func ConflictedFiles() ([]string, error) {
 	return files, nil
 }
 
+func PrintDetailedGitStatus() {
+	if !IsGitRepo() {
+		cli_utils.PrintMessage(cli_utils.LevelWarning, "Not a git repository")
+		return
+	}
+
+	branch, err := CurrentBranch()
+	if err != nil {
+		branch = "unknown"
+	}
+
+	cli_utils.PrintSubHeader(fmt.Sprintf("Git Status - %s", branch), cli_utils.ColorBlue)
+
+	ahead, behind, _ := CommitsAheadBehind()
+	if ahead > 0 || behind > 0 {
+		syncMsg := ""
+		if ahead > 0 {
+			syncMsg += fmt.Sprintf("%d ahead", ahead)
+		}
+		if behind > 0 {
+			if syncMsg != "" {
+				syncMsg += ", "
+			}
+			syncMsg += fmt.Sprintf("%d behind", behind)
+		}
+		cli_utils.PrintMessage(cli_utils.LevelInfo, "Branch "+syncMsg+" of origin")
+	} else {
+		cli_utils.PrintMessage(cli_utils.LevelSuccess, "Branch up to date with origin")
+	}
+
+	fmt.Println()
+
+	conflicts, _ := ConflictedFiles()
+	uncommitted, _ := UncommittedFiles()
+
+	if len(conflicts) > 0 {
+		cli_utils.PrintMessage(cli_utils.LevelError, fmt.Sprintf("%d conflicted files:", len(conflicts)))
+		for _, file := range conflicts {
+			cli_utils.PrintIndentedMessage(4, "•", cli_utils.ColorRed, file)
+		}
+
+		if len(uncommitted) > 0 {
+			fmt.Println()
+		}
+	}
+
+	if len(uncommitted) > 0 {
+		cli_utils.PrintMessage(cli_utils.LevelWarning, fmt.Sprintf("%d unstaged changes:", len(uncommitted)))
+		for _, file := range uncommitted {
+			cli_utils.PrintIndentedMessage(4, "•", cli_utils.ColorYellow, file)
+		}
+	}
+
+	if len(uncommitted) == 0 && len(conflicts) == 0 {
+		cli_utils.PrintMessage(cli_utils.LevelSuccess, "Working directory clean")
+	}
+}
+
 func FormatGitStatusString() string {
 	if !IsGitRepo() {
 		return ""
@@ -174,4 +234,45 @@ func FormatGitStatusString() string {
 	}
 
 	return b.String()
+}
+
+func PrintGitStatusCompact() {
+	branch, err := CurrentBranch()
+	if err != nil {
+		branch = "?"
+	}
+
+	ahead, behind, _ := CommitsAheadBehind()
+	uncommitted, _ := UncommittedFiles()
+	conflicts, _ := ConflictedFiles()
+
+	// Branch line with sync status
+	branchText := branch
+	if ahead > 0 || behind > 0 {
+		syncStatus := ""
+		if ahead > 0 {
+			syncStatus += fmt.Sprintf("↑%d", ahead)
+		}
+		if behind > 0 {
+			syncStatus += fmt.Sprintf("↓%d", behind)
+		}
+		branchText += " " + syncStatus
+	}
+
+	cli_utils.PrintIndentedMessage(2, "→", cli_utils.ColorBlue, branchText)
+
+	// Working directory status
+	hasConflicts := len(conflicts) > 0
+	hasUncommitted := len(uncommitted) > 0
+
+	switch {
+	case hasConflicts:
+		cli_utils.PrintIndentedMessage(2, cli_utils.SymbolError, cli_utils.ColorRed,
+			fmt.Sprintf("%d conflict(s)", len(conflicts)))
+	case hasUncommitted:
+		cli_utils.PrintIndentedMessage(2, cli_utils.SymbolWarning, cli_utils.ColorYellow,
+			fmt.Sprintf("%d unstaged change(s)", len(uncommitted)))
+	default:
+		cli_utils.PrintIndentedMessage(2, cli_utils.SymbolSuccess, cli_utils.ColorGreen, "clean")
+	}
 }

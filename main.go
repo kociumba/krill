@@ -82,35 +82,32 @@ var cmds = []*cli.Command{
 	{
 		Name:  "status",
 		Usage: "Show a quick overview of the status of the project",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "short",
+				Aliases: []string{"s"},
+				Usage:   "Show a much simpler short status message",
+			},
+		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			if config.HasConfig {
-				ver, err := config.GetVersion()
-				if err != nil {
-					return err
-				}
-
-				fmt.Print(config.CFG.Project.Name + " " + ver.StringV())
-			} else {
-				wd, err := os.Getwd()
-				if err != nil {
-					return err
-				}
-
-				name := filepath.Base(wd)
-				ver, err := config.GetVersion()
-				if err != nil {
-					return err
-				}
-
-				fmt.Print(name + " " + ver.StringV())
+			projectName, version, err := getProjectInfo()
+			if err != nil {
+				return err
 			}
 
-			git_status := git.FormatGitStatusString()
+			cli_utils.PrintColoredText(projectName, cli_utils.ColorCyan)
+			cli_utils.PrintColoredText(" "+version, cli_utils.ColorGray)
+			fmt.Println()
 
-			if git_status != "" {
-				fmt.Println("", git_status)
+			if git.IsGitRepo() {
+				if cmd.Bool("short") {
+					git.PrintGitStatusCompact()
+				} else {
+					git.PrintDetailedGitStatus()
+				}
 			}
 
+			fmt.Println()
 			if config.HasConfig {
 				cli_utils.PrintMessage(cli_utils.LevelSuccess, "krill configured")
 			} else {
@@ -218,6 +215,27 @@ var cmds = []*cli.Command{
 	// 		return nil
 	// 	},
 	// },
+}
+
+func getProjectInfo() (string, string, error) {
+	var projectName string
+
+	if config.HasConfig {
+		projectName = config.CFG.Project.Name
+	} else {
+		wd, err := os.Getwd()
+		if err != nil {
+			return "", "", err
+		}
+		projectName = filepath.Base(wd)
+	}
+
+	version, err := config.GetVersion()
+	if err != nil {
+		return "", "", err
+	}
+
+	return projectName, version.StringV(), nil
 }
 
 var err error
