@@ -3,34 +3,17 @@ package integration
 import (
 	"fmt"
 	"os"
-	"slices"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/kociumba/krill/build"
+	"github.com/kociumba/krill/cli_utils"
 	"github.com/kociumba/krill/config"
 	"github.com/kociumba/krill/git"
 )
 
-const (
-	ColorReset  = "\033[0m"
-	ColorRed    = "\033[31m"
-	ColorGreen  = "\033[32m"
-	ColorYellow = "\033[33m"
-	ColorBlue   = "\033[34m"
-	ColorCyan   = "\033[36m"
-	ColorGray   = "\033[37m"
-
-	SymbolError   = "✗"
-	SymbolWarning = "⚠"
-	SymbolSuccess = "✓"
-	SymbolInfo    = "ℹ"
-	SymbolFix     = "→"
-)
-
 type Issue struct {
 	Category    string
-	Level       string
+	Level       cli_utils.MessageLevel
 	Description string
 	Fix         string
 }
@@ -48,7 +31,7 @@ func Doctor(save_changes, show_diff bool) error {
 	if !git.CheckGitInstalled() {
 		issues = append(issues, Issue{
 			Category:    "Global",
-			Level:       "error",
+			Level:       cli_utils.LevelError,
 			Description: "Git is not installed or not found in PATH",
 			Fix:         "Install git or add it to your PATH environment variable",
 		})
@@ -57,21 +40,21 @@ func Doctor(save_changes, show_diff bool) error {
 	if !config.HasConfig {
 		issues = append(issues, Issue{
 			Category:    "Configuration",
-			Level:       "warning",
+			Level:       cli_utils.LevelWarning,
 			Description: "No project config found in working directory",
 			Fix:         "Run 'krill init' to create a project configuration",
 		})
 	} else {
-		fixedCfg = config.CFG
+		fixedCfg = config.CFG_unexpanded
 
 		detected_tools := config.DetectTools(wd)
 		isMulti := len(detected_tools) > 1 || len(config.DetectLanguages(wd, detected_tools)) > 1
-		wasMulti := len(config.CFG.Project.Tools) > 1 || len(config.CFG.Project.Languages) > 1
+		wasMulti := len(config.CFG_unexpanded.Project.Tools) > 1 || len(config.CFG_unexpanded.Project.Languages) > 1
 
-		if !config.EqualTools(config.CFG.Project.Tools, detected_tools) || isMulti != wasMulti {
+		if !config.EqualTools(config.CFG_unexpanded.Project.Tools, detected_tools) || isMulti != wasMulti {
 			issues = append(issues, Issue{
 				Category:    "Configuration",
-				Level:       "warning",
+				Level:       cli_utils.LevelWarning,
 				Description: "Tooling configuration differs from detected setup",
 				Fix:         "Update configuration to match detected tools",
 			})
@@ -81,14 +64,14 @@ func Doctor(save_changes, show_diff bool) error {
 			if err := build.GenerateDefaultBuildTargets(&fixedCfg); err != nil {
 				issues = append(issues, Issue{
 					Category:    "Build",
-					Level:       "error",
+					Level:       cli_utils.LevelError,
 					Description: fmt.Sprintf("Failed to regenerate build targets: %v", err),
 				})
 			} else {
 				if isMulti {
 					issues = append(issues, Issue{
 						Category:    "Build",
-						Level:       "info",
+						Level:       cli_utils.LevelInfo,
 						Description: "Multi-language project detected",
 						Fix:         "Added prefixed and aggregate build targets",
 					})
@@ -96,10 +79,10 @@ func Doctor(save_changes, show_diff bool) error {
 			}
 		} else {
 			detected_langs = config.DetectLanguages(wd, detected_tools)
-			if !config.EqualLanguages(config.CFG.Project.Languages, detected_langs) {
+			if !config.EqualLanguages(config.CFG_unexpanded.Project.Languages, detected_langs) {
 				issues = append(issues, Issue{
 					Category:    "Configuration",
-					Level:       "warning",
+					Level:       cli_utils.LevelWarning,
 					Description: "Language configuration differs from detected languages",
 					Fix:         "Update configuration to match detected languages",
 				})
@@ -108,10 +91,10 @@ func Doctor(save_changes, show_diff bool) error {
 		}
 
 		nested, err := DetectNestedProjects(wd)
-		if err == nil && !config.EqualNested(config.CFG.Nested, nested) {
+		if err == nil && !config.EqualNested(config.CFG_unexpanded.Nested, nested) {
 			issues = append(issues, Issue{
 				Category:    "Structure",
-				Level:       "warning",
+				Level:       cli_utils.LevelWarning,
 				Description: "Nested project configuration mismatch",
 				Fix:         "Update nested project settings",
 			})
@@ -119,157 +102,114 @@ func Doctor(save_changes, show_diff bool) error {
 		}
 	}
 
-	printDoctorResults(issues)
+	displayDoctorResults(issues)
 
 	if len(issues) > 0 {
 		if show_diff {
-			printConfigDiff(config.CFG, fixedCfg)
+			displayConfigDiff(config.CFG_unexpanded, fixedCfg)
 		}
 
 		if save_changes {
-			if err := applyFixes(fixedCfg); err != nil {
+			if err := applyConfigurationFixes(fixedCfg); err != nil {
 				return err
 			}
 		} else if hasFixableIssues(issues) {
-			printFixInstructions(save_changes, show_diff)
+			displayFixInstructions(save_changes, show_diff)
 		}
 	}
 
 	return nil
 }
 
-func printDoctorResults(issues []Issue) {
-	fmt.Printf("\n%s%s Krill Doctor Results%s\n", ColorCyan, SymbolInfo, ColorReset)
-	fmt.Printf("%s%s%s\n", ColorGray, strings.Repeat("─", 50), ColorReset)
+func displayDoctorResults(issues []Issue) {
+	cli_utils.PrintHeader("Krill Doctor Results", cli_utils.ColorCyan)
 
 	if len(issues) == 0 {
-		fmt.Printf("\n%s%s No issues detected - your project looks healthy!%s\n\n",
-			ColorGreen, SymbolSuccess, ColorReset)
+		cli_utils.PrintNoIssuesFound("your project")
 		return
 	}
 
+	categories := groupIssuesByCategory(issues)
+
+	for category, categoryIssues := range categories {
+		cli_utils.PrintSubHeader(category+" Issues", cli_utils.ColorBlue)
+
+		for _, issue := range categoryIssues {
+			cli_utils.PrintMessage(issue.Level, issue.Description)
+			if issue.Fix != "" {
+				cli_utils.PrintIndentedMessage(4, cli_utils.SymbolFix, cli_utils.ColorGray, issue.Fix)
+			}
+		}
+	}
+
+	summary := createIssueSummary(issues)
+	cli_utils.PrintSummary(summary)
+}
+
+func displayConfigDiff(current, fixed config.Cfg) {
+	curBytes, _ := toml.Marshal(current)
+	fixedBytes, _ := toml.Marshal(fixed)
+
+	cli_utils.PrintDiff("Configuration Changes", string(curBytes), string(fixedBytes))
+}
+
+func applyConfigurationFixes(fixedCfg config.Cfg) error {
+	cli_utils.PrintProgressMessage("Applying configuration fixes")
+
+	if err := config.SaveConfig(fixedCfg); err != nil {
+		cli_utils.PrintErrorMessage(fmt.Sprintf("Failed to save configuration: %v", err))
+		return err
+	}
+
+	cli_utils.PrintCompletionMessage("Configuration updated successfully")
+	return nil
+}
+
+func displayFixInstructions(save_changes, show_diff bool) {
+	cli_utils.PrintInstructions(
+		"To apply these fixes automatically, run",
+		"krill doctor --auto-fix",
+		save_changes,
+	)
+
+	cli_utils.PrintInstructions(
+		"To see proposed changes before applying, run",
+		"krill doctor --diff",
+		show_diff,
+	)
+}
+
+func groupIssuesByCategory(issues []Issue) map[string][]Issue {
 	categories := make(map[string][]Issue)
 	for _, issue := range issues {
 		categories[issue.Category] = append(categories[issue.Category], issue)
 	}
 
-	for category, categoryIssues := range categories {
-		fmt.Printf("\n%s%s %s Issues:%s\n", ColorBlue, SymbolInfo, category, ColorReset)
-
-		for _, issue := range categoryIssues {
-			symbol, color := getIssueFormatting(issue.Level)
-			fmt.Printf("  %s%s%s %s\n", color, symbol, ColorReset, issue.Description)
-
-			if issue.Fix != "" {
-				fmt.Printf("    %s%s%s %s\n", ColorGray, SymbolFix, ColorReset, issue.Fix)
-			}
-		}
-	}
-
-	errorCount := countIssuesByLevel(issues, "error")
-	warningCount := countIssuesByLevel(issues, "warning")
-	infoCount := countIssuesByLevel(issues, "info")
-
-	fmt.Printf("\n%sSummary:%s\n", ColorCyan, ColorReset)
-	if errorCount > 0 {
-		fmt.Printf("  %s%d error(s)%s\n", ColorRed, errorCount, ColorReset)
-	}
-
-	if warningCount > 0 {
-		fmt.Printf("  %s%d warning(s)%s\n", ColorYellow, warningCount, ColorReset)
-	}
-
-	if infoCount > 0 {
-		fmt.Printf("  %s%d info message(s)%s\n", ColorBlue, infoCount, ColorReset)
-	}
-
-	fmt.Println()
+	return categories
 }
 
-func printConfigDiff(current, fixed config.Cfg) {
-	fmt.Printf("\n%s%s Configuration Changes:%s\n", ColorCyan, SymbolInfo, ColorReset)
-	fmt.Printf("%s%s%s\n", ColorGray, strings.Repeat("─", 30), ColorReset)
+func createIssueSummary(issues []Issue) cli_utils.CountSummary {
+	var summary cli_utils.CountSummary
 
-	curBytes, _ := toml.Marshal(current)
-	fixedBytes, _ := toml.Marshal(fixed)
-
-	printLineDiff(string(curBytes), string(fixedBytes))
-	fmt.Println()
-}
-
-func printLineDiff(a, b string) {
-	la := strings.Split(a, "\n")
-	lb := strings.Split(b, "\n")
-	seen := make(map[string]struct{})
-
-	for _, line := range la {
-		seen[line] = struct{}{}
-	}
-
-	for _, line := range la {
-		if !slices.Contains(lb, line) && strings.TrimSpace(line) != "" {
-			fmt.Printf("  %s-%s %s\n", ColorRed, ColorReset, line)
-		}
-	}
-
-	for _, line := range lb {
-		if _, ok := seen[line]; !ok && strings.TrimSpace(line) != "" {
-			fmt.Printf("  %s+%s %s\n", ColorGreen, ColorReset, line)
-		}
-	}
-}
-
-func applyFixes(fixedCfg config.Cfg) error {
-	fmt.Printf("%s%s Applying configuration fixes...%s\n", ColorYellow, SymbolInfo, ColorReset)
-
-	if err := config.SaveConfig(fixedCfg); err != nil {
-		fmt.Printf("%s%s Failed to save configuration: %v%s\n", ColorRed, SymbolError, err, ColorReset)
-		return err
-	}
-
-	fmt.Printf("%s%s Configuration updated successfully!%s\n\n", ColorGreen, SymbolSuccess, ColorReset)
-	return nil
-}
-
-func printFixInstructions(save_changes, show_diff bool) {
-	if !save_changes {
-		fmt.Printf("%s%s To apply these fixes automatically, run:%s\n", ColorYellow, SymbolInfo, ColorReset)
-		fmt.Printf("  %skrill doctor -auto-fix%s\n\n", ColorGray, ColorReset)
-	}
-
-	if !show_diff {
-		fmt.Printf("%s%s To see proposed changes before applying, run:%s\n", ColorYellow, SymbolInfo, ColorReset)
-		fmt.Printf("  %skrill doctor -diff%s\n\n", ColorGray, ColorReset)
-	}
-}
-
-func getIssueFormatting(level string) (string, string) {
-	switch level {
-	case "error":
-		return SymbolError, ColorRed
-	case "warning":
-		return SymbolWarning, ColorYellow
-	case "info":
-		return SymbolInfo, ColorBlue
-	default:
-		return SymbolInfo, ColorGray
-	}
-}
-
-func countIssuesByLevel(issues []Issue, level string) int {
-	count := 0
 	for _, issue := range issues {
-		if issue.Level == level {
-			count++
+		switch issue.Level {
+		case cli_utils.LevelError:
+			summary.Errors++
+		case cli_utils.LevelWarning:
+			summary.Warnings++
+		case cli_utils.LevelInfo:
+			summary.Info++
+		case cli_utils.LevelSuccess:
+			summary.Success++
 		}
 	}
 
-	return count
+	return summary
 }
 
 func hasFixableIssues(issues []Issue) bool {
 	for _, issue := range issues {
-		if issue.Level == "warning" || issue.Level == "error" {
+		if issue.Level == cli_utils.LevelWarning || issue.Level == cli_utils.LevelError {
 			return true
 		}
 	}

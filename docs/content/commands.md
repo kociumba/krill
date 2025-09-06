@@ -42,4 +42,14 @@ Available subcommands:
 
 ---
 
+## Shell Completions
+
+You can register command completions for: bash, zsh, fish and powershell. This is done by running `krill completion <shell>`.
+
+Then sourcing the output in your shell to provide dynamic autocompletion results for krill, including dynamically suggesting availible target names.
+
+More info on how to specifically source this output for each shell is availible on the [urfave/cli docs](https://cli.urfave.org/v3/examples/completions/shell-completions/)
+
+---
+
 For more details on each command, use `krill <command> --help`.

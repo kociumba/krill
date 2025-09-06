@@ -34,7 +34,7 @@ jobs:
         run: |
           go install github.com/kociumba/klarity@latest
 
-      - name: Build example site
+      - name: Build docs
         run: |
           klarity build docs
 

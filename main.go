@@ -112,9 +112,9 @@ var cmds = []*cli.Command{
 			}
 
 			if config.HasConfig {
-				fmt.Println("krill config ✓")
+				cli_utils.PrintMessage(cli_utils.LevelSuccess, "krill configured")
 			} else {
-				fmt.Println("no krill config, build features unavailible")
+				cli_utils.PrintMessage(cli_utils.LevelWarning, "no krill config - build features unavailable")
 			}
 
 			return nil
@@ -277,7 +277,11 @@ func main() {
 
 			return ctx, nil
 		},
+		EnableShellCompletion: true,
+		Suggest:               true,
 	}
+
+	cli.RootCommandHelpTemplate = fmt.Sprintf("%s\nDOCS: https://kociumba.github.io/krill", cli.RootCommandHelpTemplate)
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
