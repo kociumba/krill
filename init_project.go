@@ -45,6 +45,7 @@ func InitProject() error {
 	config.CFG.Project.Languages = langs
 
 	env, err := config.DetectEnvironment(slices.Contains(langs, config.C) || slices.Contains(langs, config.Cpp))
+	config.CFG.Env = make(map[string]config.Environment)
 	config.CFG.Env[runtime.GOOS] = *env
 
 	err = build.GenerateDefaultBuildTargets(&config.CFG)
