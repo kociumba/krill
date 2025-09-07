@@ -246,12 +246,12 @@ func main() {
 		config.HasConfig = true
 	}
 
-	config.CFG, err = templating.ExpandConfig(config.CFG_unexpanded)
-	if err != nil {
-		log.Fatalf("could not expand templating arguments in config: %s", err)
-	}
-
 	if config.HasConfig {
+		config.CFG, err = templating.ExpandConfig(config.CFG_unexpanded)
+		if err != nil {
+			log.Fatalf("could not expand templating arguments in config: %s", err)
+		}
+
 		build_cmds = build.GenerateBuildCmds(config.CFG)
 		if len(build_cmds) > 0 {
 		}

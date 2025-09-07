@@ -51,7 +51,7 @@ mappings = { debug = "custom-debug", release = "custom-release" }
 
 ## Templating
 
-Templating is supported, throught standard go tmpl syntax: `{{ .var.field }}`, the config file goes throught a one pass template expansion so nested and recursive templates are not supported, in addition to each variable defined in the config, special utility variables:
+Templating is supported, throught standard go tmpl syntax: `{{ .var }}`, the config file goes throught a one pass template expansion so nested and recursive templates are not supported, in addition to each variable defined in the config, special utility variables:
 
 - `exe_ext` - provides the executable file extension on the executing platform
 - `dll_ext` - provides the dynamic/shared library extension
